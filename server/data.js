@@ -19,10 +19,6 @@ const Beer = sequelize.define('Beer', {
     price: {
         type: DataTypes.DECIMAL(4, 2),
         allowNull: false
-    },
-    stock: {
-        type: DataTypes.INTEGER,
-        allowNull: false
     }
 }, {
     tableName: 'beer',
@@ -35,11 +31,11 @@ async function initializeDatabase() {
         console.log('Beer table created successfully!');
 
         await Beer.bulkCreate([
-            { name: 'Heineken', img: 'https://example.com/heineken.jpg', price: 2.50, stock: 100 },
-            { name: 'Tesco', img: 'https://example.com/budweiser.jpg', price: 2.00, stock: 50 },
-            { name: 'Zywiec Mocne', img: 'https://example.com/corona.jpg', price: 2.75, stock: 75 },
-            { name: 'Harnas', img: 'https://example.com/guinness.jpg', price: 3.00, stock: 30 },
-            { name: 'Warka', img: 'https://example.com/stella.jpg', price: 2.25, stock: 60 }
+            { name: 'Heineken', img: 'https://png.pngtree.com/png-clipart/20220930/original/pngtree-beer-mug-illustration-png-image_8646552.png', price: 2.50 },
+            { name: 'Tesco', img: 'https://png.pngtree.com/png-clipart/20220930/original/pngtree-beer-mug-illustration-png-image_8646552.png', price: 2.00 },
+            { name: 'Zywiec Mocne', img: 'https://png.pngtree.com/png-clipart/20220930/original/pngtree-beer-mug-illustration-png-image_8646552.png', price: 2.75 },
+            { name: 'Harnas', img: 'https://png.pngtree.com/png-clipart/20220930/original/pngtree-beer-mug-illustration-png-image_8646552.png', price: 3.00 },
+            { name: 'Warka', img: 'https://png.pngtree.com/png-clipart/20220930/original/pngtree-beer-mug-illustration-png-image_8646552.png', price: 2.25 }
         ]);
         console.log('Beer entries created successfully!');
     } catch (error) {

@@ -1,43 +1,119 @@
-import { Router } from 'express';
+import express, { Router } from 'express';
+import { Beer } from './data.js';
+import { v4 as genuuid } from 'uuid';
+import session from 'express-session';
+
 const router = Router();
 
-import { Beer } from './data.js';
+router.use(express.json());
+router.use(session({
+    genid: (req) => {
+        return genuuid()
+    },
+    secret: 'keyboard cat',
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 24
+    },
+    resave: false,
+    saveUninitialized: true,
+    cart: [],
+    message: null
+}));
 
-router.get('/', async (req, res) => {
+router.all('/', async (req, res) => {
     const beers = await Beer.findAll();
+    const message = req.session.message || null;
+    res.render('home/index', { beers: beers.map(beer => beer.dataValues), message: message });
+    req.session.message = null; 
+});
 
-    res.render('home/index', { beers: beers.map(beer => beer.dataValues) });
+router.get('/cart', async (req, res) => {
+    const cart = req.session.cart || [];
+    const beers = await Beer.findAll({
+        where: {
+            id: cart
+        }
+    });
+
+    res.render('home/cart', { beers: beers.map(beer => beer.dataValues) });
 });
 
 router.post('/cart/add', (req, res) => {
-    const id = req.body;
+    const { beerId: id } = req.body;
 
     if (!id) {
         return res.status(400).send('Invalid beer data');
     }
 
     const cart = req.session.cart || [];
-    cart.push({ id });
+    cart.push(id);
     req.session.cart = cart;
+
+    console.log(req.session.cart);
 
     res.redirect('/');
 });
 
-router.get('/beer/:id', async (req, res) => {
-    const beerId = req.params.id;
-    const beer = await Beer.findByPk(beerId);
-
-    if (!beer) {
-        return res.status(404).send('Beer not found');
-    }
-
-    res.render('home/beer', { beer: beer.dataValues });
+router.post('/cart/cancel', (req, res) => {
+    req.session.cart = [];
+    req.session.message = 'Your cart has been cleared.';
+    res.redirect('/');
 });
 
-router.get('/cart', (req, res) => {
+router.post('/cart/finalize', async (req, res) => {
     const cart = req.session.cart || [];
 
-    res.render('home/cart', { cart });
+    if (cart.length === 0) {
+        return res.redirect('/');
+    }
+
+    const beers = await Beer.findAll({
+        where: {
+            id: cart
+        }
+    });
+
+    console.log(beers.length)
+
+    if (beers.length !== cart.length) {
+        req.session.message = 'Some items in your cart are no longer available.';
+        req.session.cart = [];
+        res.redirect('/');
+        return;
+    }
+    
+    await Beer.destroy({
+        where: {
+            id: cart
+        }
+    });
+    req.session.message = 'Your order has been placed successfully!';
+
+    req.session.cart = [];
+    res.redirect('/');
+});
+
+router.post('/cart/remove', (req, res) => {
+    const { beerId: id } = req.body;
+
+    if (!id) {
+        return res.status(400).send('Invalid beer data');
+    }
+
+    const cart = req.session.cart || [];
+    const index = cart.indexOf(id);
+    if (index > -1) {
+        cart.splice(index, 1);
+    }
+    req.session.cart = cart;
+
+    if (cart.length === 0) {
+        res.redirect('/');
+    }
+
+    console.log(req.session.cart);
+
+    res.redirect('/cart');
 });
 
 export default router;
